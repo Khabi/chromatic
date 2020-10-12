@@ -44,7 +44,7 @@ var registerCmd = &cobra.Command{
 		fmt.Println("Press the link button on the hub, then press enter...")
 		fmt.Scanln()
 
-		user, clientkey, err := bridge.CreateUser("vivid ambient lights") // Link button needs to be pressed
+		user, clientkey, err := bridge.CreateUser("chromatic") // Link button needs to be pressed
 		if err != nil {
 			var e *huego.APIError
 			if errors.As(err, &e) {

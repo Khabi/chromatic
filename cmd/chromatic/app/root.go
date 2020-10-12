@@ -157,7 +157,7 @@ var rootCmd = &cobra.Command{
 			case "whole":
 				bounds = append(bounds, location.Preset(id, location.Whole))
 			default:
-				bounds = append(bounds, location.Bound{ID: id, X: loc.X, Y: loc.Y, Width: 20, Height: 20})
+				bounds = append(bounds, location.Bound{ID: id, X: loc.X, Y: loc.Y, Width: 5, Height: 5})
 			}
 		}
 

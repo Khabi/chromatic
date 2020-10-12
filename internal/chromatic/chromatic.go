@@ -7,6 +7,7 @@ import (
 	"image/draw"
 	_ "image/jpeg"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/GetVivid/huego"
@@ -93,13 +94,22 @@ func Run(command <-chan State, status chan ServerStatus, video *v4l.Device, hue 
 				for id, clr := range results {
 					c1, c2, c3 := clr.Xyy()
 					l[id] = []float32{float32(c1), float32(c2), float32(c3)}
-					stream.Set(l)
 				}
+				fmt.Println(l)
+				stream.Set(l)
+
 				fps.Incr(1)
 			}
 		}
 	}
 }
+
+type Processor struct {
+	ID    int
+	Color colorful.Color
+}
+
+var wg sync.WaitGroup
 
 func Get(frame image.Image, bounds location.Bounds) map[int]colorful.Color {
 	res := map[int]colorful.Color{}
@@ -108,14 +118,34 @@ func Get(frame image.Image, bounds location.Bounds) map[int]colorful.Color {
 	width := fb.Max.X
 	height := fb.Max.Y
 
-	for _, b := range bounds {
-		rect := b.Rectangle(width, height)
-		section := image.NewRGBA(rect)
-		draw.Draw(section, rect, frame, rect.Min, draw.Src)
+	retChan := make(chan Processor, len(bounds))
 
-		clr := extract.Average(section)
-		fmt.Println(clr)
-		res[b.ID] = clr
+	for _, b := range bounds {
+		wg.Add(1)
+		go func(bound location.Bound, frame image.Image, results chan Processor) {
+			defer wg.Done()
+			rect := bound.Rectangle(width, height)
+			section := image.NewRGBA(rect)
+			draw.Draw(section, rect, frame, rect.Min, draw.Src)
+
+			//m := resize.Resize(50, 0, section, resize.Lanczos3)
+
+			clr := extract.Average(section)
+			//r, g, z, a := clr.RGBA()
+			//fmt.Println(b.ID, r>>8, g>>8, z>>8, a>>8)
+			res := Processor{
+				ID:    bound.ID,
+				Color: clr,
+			}
+			results <- res
+		}(b, frame, retChan)
+	}
+
+	wg.Wait()
+	close(retChan)
+
+	for m := range retChan {
+		res[m.ID] = m.Color
 	}
 
 	return res

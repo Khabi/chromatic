@@ -37,7 +37,7 @@ func Average(i image.Image) colorful.Color {
 	a /= pixels
 
 	avgColor, _ := colorful.MakeColor(
-		color.NRGBA{
+		color.RGBA{
 			uint8(r / 0x101),
 			uint8(g / 0x101),
 			uint8(b / 0x101),
@@ -68,6 +68,7 @@ func Prominent(i image.Image) colorful.Color {
 	for x := bounds.Min.X; x < bounds.Max.X; x++ {
 		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 			pr, pg, pb, pa = i.At(x, y).RGBA()
+
 			o = append(o, clusters.Coordinates{
 				float64(pr),
 				float64(pg),
